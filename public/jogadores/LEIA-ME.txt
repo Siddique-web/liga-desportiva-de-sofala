@@ -1,0 +1,8 @@
+Fotos dos jogadores
+-------------------
+Coloque aqui uma foto por jogador, com o número da camisola como nome:
+  12.jpg  (Filipe)   5.jpg (Viola)   21.jpg (Zabula)   ...
+Formato ideal: retrato (3:4), ex. 600x800 px, rosto na metade de cima.
+Sem ficheiro, o cartão mostra o emblema da LDS como substituto.
+Para usar outro nome/caminho, defina `foto: '/jogadores/outro.jpg'` no jogador em src/data.ts.
+Detalhes (idade, altura, jogos, golos...) preenchem-se também em src/data.ts (PLANTEL).
