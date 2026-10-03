@@ -2,7 +2,7 @@
 
 Site institucional (React + TypeScript + Vite) com backend Node (Express + SQLite).
 
-## Arrancar
+## Arrancar (requer Node.js 20.12 ou superior)
     npm install
     cp .env.example .env     # edite: senha do treinador, números M-Pesa/e-Mola, NIB, WhatsApp, SMTP
     npm run dev              # site http://localhost:5173  (API em :3001)
@@ -34,3 +34,17 @@ Ao mudar o estado de um candidato (`Em Análise`, `Convocado para Testes`, `Reje
 
 ## Plantel com fotos
 Cartões em retrato com foto, número, posição, estado e estatísticas. Fotos em `public/jogadores/<nº>.jpg` (ver `LEIA-ME.txt`); sem foto aparece o emblema.
+
+## Fotos e legendas (galeria)
+Secção **Galeria** (`#galeria`) com separadores por categoria (Equipas · Em jogo · Equipamento · Treino e bastidores), legendas sobre a foto e ecrã grande ao tocar (setas ← → e Esc no teclado).
+- Fotos em `public/img/galeria/`.
+- Para acrescentar uma foto, junte um objeto a `GALERIA` em `src/data.ts`: `{ src, cat, titulo, legenda, alt }`.
+- Duas fotos novas (equipa de branco e equipamento alternativo) também aparecem no carrossel de notícias (`NOTICIAS`).
+
+## Loja — o que foi corrigido
+- Importações de tipos (`Produto`, `Config`) em falta que impediam o `npm run build`.
+- Carrinho: quantidades limitadas ao stock e a 10 por linha (como o servidor), remover artigo, contador na barra de navegação, recuperação de dados corrompidos e ajuste automático ao stock real.
+- Estados de carregamento / erro com «Tentar novamente»; fotos com alternativa SVG se falharem.
+- Checkout: validação alinhada com o servidor (telefone, e-mail opcional), refresco do stock após cada encomenda e após erro de stock.
+- Servidor: validação de e-mail, tamanhos e stock; erros de JSON devolvem 400.
+- Painel: erros visíveis, sessão expirada volta ao login, campos de stock atualizam após gravar.

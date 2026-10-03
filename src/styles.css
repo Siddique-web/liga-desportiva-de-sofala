@@ -207,10 +207,6 @@ tr.click{cursor:pointer}tr.click:hover td{background:#12261a}td small{color:var(
 /* ===== Match Center centrado + galeria ===== */
 .center{text-align:center}
 .center .pitch{margin:20px auto}
-.gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;max-width:820px;margin:28px auto 0}
-.gallery figure{margin:0;border-radius:12px;overflow:hidden;border:1px solid #cfe0d3;background:#fff}
-.gallery img{display:block;width:100%;height:auto}
-.gallery figcaption{padding:10px 14px;font-size:.85rem;font-weight:600;color:var(--gd)}
 
 /* ===== Loja (destaque), Sócios, Eventos ===== */
 .shopfeat{display:grid;grid-template-columns:1.2fr 1fr;gap:clamp(20px,4vw,48px);align-items:center;margin-top:22px}
@@ -248,3 +244,35 @@ tr.click{cursor:pointer}tr.click:hover td{background:#12261a}td small{color:var(
 .pc.st .mini{border-top-color:#ffffff30}
 .pc .mini span{text-align:center}
 .mb .ph{aspect-ratio:4/3;border-radius:12px;margin-bottom:12px}
+
+/* ===== Nav: contador do carrinho ===== */
+.cart-n{display:inline-grid;place-items:center;min-width:18px;height:18px;margin-left:6px;padding:0 5px;border-radius:9px;background:var(--gd);color:#fff;font:700 .7rem/1 "Segoe UI",Arial,sans-serif;vertical-align:1px}
+
+/* ===== Galeria (fotos + legendas) ===== */
+#galeria .tabs{margin-bottom:22px}
+.galeria{columns:3 260px;column-gap:16px}
+.gi{margin:0 0 16px;break-inside:avoid;border-radius:12px;overflow:hidden;background:var(--card);border:1px solid var(--line)}
+.gi button{position:relative;display:block;width:100%;padding:0;border:0;background:none;color:#fff;text-align:left;cursor:pointer;font:inherit}
+.gi img{display:block;width:100%;height:auto;transition:transform .5s ease}
+.gi button:hover img,.gi button:focus-visible img{transform:scale(1.04)}
+.gi button{overflow:hidden}
+.gc{position:absolute;inset:auto 0 0 0;display:flex;flex-direction:column;gap:4px;padding:48px 14px 14px;background:linear-gradient(transparent,#000000d9 70%)}
+.gc em,.lb figcaption em{align-self:flex-start;background:var(--g);color:#fff;font:700 .68rem/1 "Segoe UI",Arial,sans-serif;font-style:normal;text-transform:uppercase;letter-spacing:.06em;padding:5px 8px;border-radius:4px}
+.gc b,.lb figcaption b{font:1.25rem/1.1 Impact,"Arial Narrow Bold",Arial,sans-serif;text-transform:uppercase;letter-spacing:.4px;font-weight:400}
+.gc span:last-child{font-size:.85rem;line-height:1.4;color:#e4efe8;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+@media(hover:hover){.gc span:last-child{max-height:0;opacity:0;transition:max-height .35s ease,opacity .35s ease}.gi button:hover .gc span:last-child,.gi button:focus-visible .gc span:last-child{max-height:6em;opacity:1}}
+.lb{position:fixed;inset:0;z-index:calc(var(--z-modal) + 10);display:grid;place-items:center;background:#000000f5;overflow:auto;padding:56px clamp(56px,8vw,96px) 24px}
+.lb figure{margin:auto;max-width:min(1100px,100%);max-height:100%;display:flex;flex-direction:column;align-items:center;gap:12px}
+.lb img{max-width:100%;max-height:min(58vh,640px);object-fit:contain;border-radius:10px;box-shadow:0 12px 40px #000a}
+.lb figcaption{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;max-width:62ch}
+.lb figcaption span{color:#e4efe8}.lb figcaption small{color:var(--m)}
+.lb-x{position:absolute;top:12px;right:14px;width:44px;height:44px;border-radius:50%;border:2px solid #fff;background:#0007;color:#fff;font-size:1.8rem;line-height:1;cursor:pointer}
+@media(max-width:640px){.lb{padding:56px 12px 20px}.lb .nb{top:auto;bottom:16px;transform:none}.lb .nb.prev{left:12px}.lb .nb.next{right:12px}.lb img{max-height:52vh}}
+@media(prefers-reduced-motion:reduce){.gi img,.gc span:last-child{transition:none}}
+
+/* ===== Loja: carrinho e erros ===== */
+.err .btn{margin:0 0 0 10px;padding:6px 14px}
+.cartbar p{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cartbar p b{margin-left:auto;color:var(--n)}
+.gal .thumbs img,.gal .thumbs svg{aspect-ratio:1;object-fit:cover}
+.gal>img{aspect-ratio:1;object-fit:cover;background:#0b140e}

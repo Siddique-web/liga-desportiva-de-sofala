@@ -40,11 +40,15 @@ if (!db.prepare('SELECT 1 FROM products').get()) {
   ins.run('Cachecol Verde e Branco', 'scarf', '#1e4d2b', '#ffffff', 'Cachecol de adepto em malha dupla, com o nome do clube em jacquard. Ideal para dias de jogo.', 600, '["Único"]', '{"Único":25}')
   ins.run('Boné L.D.S.', 'cap', '#1e4d2b', '#ffffff', 'Boné de aba curva com logótipo bordado e fecho ajustável.', 500, '["Único"]', '{"Único":30}')
 }
-// Fotos reais dos equipamentos (public/img). Só preenche produtos que ainda não têm imagens.
+// Fotos reais dos equipamentos (public/img). Preenche produtos sem imagens e substitui a versão antiga por defeito.
 {
-  const FOTOS = { 'Camisola Principal 26/27': ['/img/loja-verde.png', '/img/feira.png'], 'Camisola Alternativa 26/27': ['/img/loja-branca.png', '/img/feira.png'] }
-  const upd = db.prepare("UPDATE products SET images=? WHERE name=? AND (images IS NULL OR images='[]')")
-  for (const [n, imgs] of Object.entries(FOTOS)) upd.run(JSON.stringify(imgs), n)
+  const FOTOS = {
+    'Camisola Principal 26/27': ['/img/loja-verde.png'],
+    'Camisola Alternativa 26/27': ['/img/loja-branca.png', '/img/galeria/equipamento-alternativo.jpg'],
+  }
+  const ANTIGAS = ['[]', JSON.stringify(['/img/loja-verde.png', '/img/feira.png']), JSON.stringify(['/img/loja-branca.png', '/img/feira.png'])]
+  const upd = db.prepare('UPDATE products SET images=? WHERE name=? AND (images IS NULL OR images IN (?,?,?))')
+  for (const [n, imgs] of Object.entries(FOTOS)) upd.run(JSON.stringify(imgs), n, ...ANTIGAS)
 }
 
 // ---------- Utilitários ----------
@@ -102,21 +106,22 @@ app.post('/api/orders', (req, res) => {
   const miss = need(b, ['name', 'phone', 'address', 'city', 'method'])
   if (miss.length || !['M-Pesa', 'e-Mola', 'Transferência bancária'].includes(b.method) || !Array.isArray(b.items) || !b.items.length || b.items.length > 30)
     return res.status(400).json({ error: 'Dados da encomenda inválidos.' })
-  if (!/^\+?[0-9\s]{9,15}$/.test(b.phone)) return res.status(400).json({ error: 'Telefone inválido.' })
+  if (!/^\+?[0-9\s]{9,15}$/.test(String(b.phone).trim())) return res.status(400).json({ error: 'Telefone inválido.' })
+  if (b.email && !/^\S+@\S+\.\S+$/.test(String(b.email).trim())) return res.status(400).json({ error: 'E-mail inválido.' })
   const tx = db.transaction(() => {
     let total = 0; const items = []
     for (const it of b.items) {
-      const p = db.prepare('SELECT * FROM products WHERE id=?').get(+it.id), q = Math.floor(+it.qty)
+      const p = db.prepare('SELECT * FROM products WHERE id=?').get(+it?.id), q = Math.floor(+it?.qty)
       if (!p || !(q > 0 && q <= 10)) throw new Error('Artigo inválido.')
       const stock = JSON.parse(p.stock)
-      if (!(it.size in stock)) throw new Error('Tamanho inválido.')
+      if (!Object.hasOwn(stock, it.size)) throw new Error('Tamanho inválido.')
       if (stock[it.size] < q) throw new Error(`Sem stock suficiente: ${p.name} (${it.size}).`)
       stock[it.size] -= q; db.prepare('UPDATE products SET stock=? WHERE id=?').run(JSON.stringify(stock), p.id)
       total += p.price * q; items.push({ id: p.id, name: p.name, size: it.size, qty: q, price: p.price })
     }
     const code = 'LDS-' + crypto.randomBytes(4).toString('hex').toUpperCase()
     db.prepare('INSERT INTO orders(code,name,phone,email,address,city,method,items,total) VALUES(?,?,?,?,?,?,?,?,?)')
-      .run(code, b.name.trim(), b.phone.trim(), (b.email || '').trim(), b.address.trim(), b.city.trim(), b.method, JSON.stringify(items), total)
+      .run(code, String(b.name).trim(), String(b.phone).trim(), String(b.email || '').trim(), String(b.address).trim(), String(b.city).trim(), b.method, JSON.stringify(items), total)
     return { code, total, items }
   })
   try { res.status(201).json(tx()) } catch (e) { res.status(409).json({ error: e.message }) }
@@ -207,8 +212,10 @@ A.put('/orders/:id/status', (req, res) => {
   res.json({ ok: true })
 })
 A.put('/products/:id/stock', (req, res) => {
-  const st = req.body?.stock
-  if (!st || Object.values(st).some(v => !Number.isInteger(v) || v < 0)) return res.status(400).json({ error: 'Stock inválido.' })
+  const st = req.body?.stock, p = db.prepare('SELECT sizes FROM products WHERE id=?').get(req.params.id)
+  if (!p) return res.status(404).json({ error: 'Artigo não encontrado.' })
+  const tamanhos = JSON.parse(p.sizes)
+  if (!st || typeof st !== 'object' || Object.keys(st).some(k => !tamanhos.includes(k)) || Object.values(st).some(v => !Number.isInteger(v) || v < 0 || v > 100000)) return res.status(400).json({ error: 'Stock inválido.' })
   db.prepare('UPDATE products SET stock=? WHERE id=?').run(JSON.stringify(st), req.params.id); res.json({ ok: true })
 })
 A.get('/notifications', (_, res) => res.json(db.prepare('SELECT * FROM notifications ORDER BY id DESC LIMIT 50').all()))
@@ -220,5 +227,8 @@ A.get('/files/:name', (req, res) => {   // ficheiros privados: só treinadores a
 // ---------- Frontend (build) ----------
 const dist = path.join(root, 'dist')
 if (fs.existsSync(dist)) { app.use(express.static(dist)); app.get(/^\/(?!api).*/, (_, res) => res.sendFile(path.join(dist, 'index.html'))) }
-app.use((err, _, res, __) => { console.error(err); res.status(500).json({ error: 'Erro interno.' }) })
+app.use((err, _, res, __) => {
+  if (err?.type === 'entity.parse.failed' || err?.status === 400) return res.status(400).json({ error: 'Pedido inválido.' })
+  console.error(err); res.status(500).json({ error: 'Erro interno.' })
+})
 app.listen(+E.PORT || 3001, () => console.log(`L.D.S. a correr em http://localhost:${+E.PORT || 3001}`))

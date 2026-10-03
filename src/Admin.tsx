@@ -38,8 +38,9 @@ export default function Admin() {
   const [ped, setPed] = useState<any[]>([]), [pr, setPr] = useState<Produto[]>([])
   useEffect(() => { api('/api/me').then(setU).catch(() => setU(null)) }, [])
   const carregar = useCallback(() => {
-    api(`/api/admin/athletes?${new URLSearchParams(Object.entries(fl).filter(([, v]) => v))}`).then(setLista)
-    api('/api/admin/orders').then(setPed); api('/api/products').then(setPr)
+    const falha = (e: Error) => { if (/Sess/.test(e.message)) setU(null); else setErr(e.message) }
+    api(`/api/admin/athletes?${new URLSearchParams(Object.entries(fl).filter(([, v]) => v))}`).then(setLista).catch(falha)
+    api('/api/admin/orders').then(setPed).catch(falha); api('/api/products').then(setPr).catch(falha)
   }, [fl])
   useEffect(() => { if (u) carregar() }, [u, carregar])
   if (u === undefined) return <section className="shop"><p>A carregar…</p></section>
@@ -49,9 +50,10 @@ export default function Admin() {
       <label>Palavra-passe<input type="password" value={cr.password} onChange={e => setCr({ ...cr, password: e.target.value })} autoComplete="current-password" /></label>
       {err && <p className="err">{err}</p>}<button className="btn p">Entrar</button></form></section>
   const set = (k: string, v: string) => setFl({ ...fl, [k]: v })
-  const estadoPedido = async (id: number, status: string) => { await api(`/api/admin/orders/${id}/status`, 'PUT', { status }); carregar() }
-  const stock = async (p: Produto, s: string, v: number) => { await api(`/api/admin/products/${p.id}/stock`, 'PUT', { stock: { ...p.stock, [s]: v } }); carregar() }
-  return <section className="shop"><div className="adm"><h2>Painel <span>técnico</span></h2><span>{u.name} <button className="btn" onClick={async () => { await api('/api/logout', 'POST'); setU(null) }}>Sair</button></span></div>
+  const estadoPedido = async (id: number, status: string) => { try { await api(`/api/admin/orders/${id}/status`, 'PUT', { status }); setErr('') } catch (x: any) { setErr(x.message) } carregar() }
+  const stock = async (p: Produto, s: string, v: number) => { try { await api(`/api/admin/products/${p.id}/stock`, 'PUT', { stock: { ...p.stock, [s]: v } }); setErr('') } catch (x: any) { setErr(x.message) } carregar() }
+  return <section className="shop"><div className="adm"><h2>Painel <span>técnico</span></h2><span>{u.name} <button className="btn" onClick={async () => { try { await api('/api/logout', 'POST') } catch {} setU(null) }}>Sair</button></span></div>
+    {err && <p className="err" role="alert">{err}</p>}
     <div className="tabs">{([['c', `Candidatos (${lista.length})`], ['e', `Encomendas (${ped.length})`], ['s', 'Stock']] as const).map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => { setTab(k); setSel(null) }}>{l}</button>)}</div>
     {tab === 'c' && (sel ? <Candidato id={sel} back={() => { setSel(null); carregar() }} /> : <>
       <div className="filters"><select value={fl.pos} onChange={e => set('pos', e.target.value)}><option value="">Todas as posições</option>{POSICOES.map(p => <option key={p}>{p}</option>)}</select>
@@ -63,6 +65,6 @@ export default function Admin() {
       <tbody>{ped.map(o => <tr key={o.id}><td>{o.code}</td><td>{o.name}<br /><small>{o.phone} · {o.address}, {o.city}</small></td><td>{o.items.map((i: any) => `${i.qty}× ${i.name} (${i.size})`).join('; ')}</td><td>{mt(o.total)}</td><td>{o.method}</td>
         <td>{o.proof ? <a href={file(o.proof)} target="_blank" rel="noreferrer">Ver</a> : '—'}</td>
         <td><select value={o.status} onChange={e => estadoPedido(o.id, e.target.value)}>{PED.map(s => <option key={s}>{s}</option>)}</select></td></tr>)}</tbody></table></div>}
-    {tab === 's' && <div className="grid">{pr.map(p => <div className="card" key={p.id}><h3>{p.name}</h3>{p.sizes.map(s => <p key={s} className="crit">{s} <input type="number" min={0} defaultValue={p.stock[s]} onBlur={e => +e.target.value !== p.stock[s] && stock(p, s, Math.max(0, Math.floor(+e.target.value)))} /></p>)}</div>)}</div>}
+    {tab === 's' && <div className="grid">{pr.map(p => <div className="card" key={p.id}><h3>{p.name}</h3>{(p.sizes ?? []).map(s => <p key={s} className="crit">{s} <input key={`${p.id}-${s}-${p.stock?.[s] ?? 0}`} type="number" min={0} defaultValue={p.stock?.[s] ?? 0} aria-label={`Stock ${p.name} ${s}`} onBlur={e => +e.target.value !== (p.stock?.[s] ?? 0) && stock(p, s, Math.max(0, Math.floor(+e.target.value)))} /></p>)}</div>)}</div>}
   </section>
 }
