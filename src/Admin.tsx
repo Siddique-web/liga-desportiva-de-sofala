@@ -65,6 +65,6 @@ export default function Admin() {
       <tbody>{ped.map(o => <tr key={o.id}><td>{o.code}</td><td>{o.name}<br /><small>{o.phone} · {o.address}, {o.city}</small></td><td>{o.items.map((i: any) => `${i.qty}× ${i.name} (${i.size})`).join('; ')}</td><td>{mt(o.total)}</td><td>{o.method}</td>
         <td>{o.proof ? <a href={file(o.proof)} target="_blank" rel="noreferrer">Ver</a> : '—'}</td>
         <td><select value={o.status} onChange={e => estadoPedido(o.id, e.target.value)}>{PED.map(s => <option key={s}>{s}</option>)}</select></td></tr>)}</tbody></table></div>}
-    {tab === 's' && <div className="grid">{pr.map(p => <div className="card" key={p.id}><h3>{p.name}</h3>{p.sizes.map(s => <p key={s} className="crit">{s} <input key={`${p.id}-${s}-${p.stock[s]}`} type="number" min={0} defaultValue={p.stock[s]} aria-label={`Stock ${p.name} ${s}`} onBlur={e => +e.target.value !== p.stock[s] && stock(p, s, Math.max(0, Math.floor(+e.target.value)))} /></p>)}</div>)}</div>}
+    {tab === 's' && <div className="grid">{pr.map(p => <div className="card" key={p.id}><h3>{p.name}</h3>{(p.sizes ?? []).map(s => <p key={s} className="crit">{s} <input key={`${p.id}-${s}-${p.stock?.[s] ?? 0}`} type="number" min={0} defaultValue={p.stock?.[s] ?? 0} aria-label={`Stock ${p.name} ${s}`} onBlur={e => +e.target.value !== (p.stock?.[s] ?? 0) && stock(p, s, Math.max(0, Math.floor(+e.target.value)))} /></p>)}</div>)}</div>}
   </section>
 }
